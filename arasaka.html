@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PERSONAL LINK // v2.077</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --void:#0a0808;
+    --panel:#120e0e;
+    --panel-edge:#2e1414;
+    --amber:#e0332f;
+    --amber-dim:#7a1f1c;
+    --cyan:#e0332f;
+    --red:#ff3b30;
+    --text-dim:#8a7373;
+    --grid:#1a0f0f;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html,body{height:100%;background:var(--void);color:var(--amber);
+    font-family:'Share Tech Mono',monospace;overflow:hidden;user-select:none;
+    -webkit-tap-highlight-color:transparent;}
+  body{
+    background-image:
+      radial-gradient(circle at 1px 1px, var(--grid) 1px, transparent 1px);
+    background-size:26px 26px;
+  }
+
+  .crt{position:fixed;inset:0;pointer-events:none;z-index:60;
+    background:repeating-linear-gradient(to bottom, rgba(0,0,0,0) 0px, rgba(0,0,0,.14) 1px, rgba(0,0,0,0) 2px);
+    mix-blend-mode:multiply;}
+  .crt::after{content:"";position:absolute;inset:0;
+    background:radial-gradient(ellipse at center, rgba(255,157,28,.05) 0%, rgba(0,0,0,.4) 100%);}
+  @keyframes flicker{0%,100%{opacity:1;}92%{opacity:1;}93%{opacity:.85;}94%{opacity:1;}97%{opacity:.93;}}
+  #app{animation:flicker 6s infinite;height:100%;display:flex;}
+
+  @keyframes glitchIn{
+    0%{clip-path:inset(0 0 100% 0);opacity:0;}
+    10%{clip-path:inset(40% 0 20% 0);opacity:1;transform:translateX(-6px);}
+    20%{clip-path:inset(10% 0 60% 0);transform:translateX(4px);}
+    30%{clip-path:inset(0 0 0 0);transform:translateX(0);}
+    100%{clip-path:inset(0 0 0 0);}
+  }
+
+  #boot{position:fixed;inset:0;z-index:100;background:var(--void);
+    display:flex;flex-direction:column;justify-content:center;padding:6vw;
+    font-size:13px;line-height:2;}
+  #boot .line{opacity:0;white-space:pre;}
+  #boot .cursor{display:inline-block;width:8px;height:13px;background:var(--amber);
+    vertical-align:middle;animation:blink 1s steps(1) infinite;}
+  @keyframes blink{50%{opacity:0;}}
+  .hidden{display:none !important;}
+  .bootbar-bg{width:100%;max-width:320px;height:10px;border:1px solid var(--amber-dim);margin-top:10px;}
+  .bootbar-fill{height:100%;width:0%;background:var(--amber);transition:width .1s linear;}
+
+  /* Sidebar nav */
+  nav{width:150px;flex-shrink:0;border-right:2px solid var(--amber-dim);
+    display:flex;flex-direction:column;padding:18px 0;}
+  nav .logo{padding:0 16px 16px;font-family:'Chakra Petch',sans-serif;font-weight:700;
+    font-size:15px;letter-spacing:2px;border-bottom:1px solid var(--panel-edge);margin-bottom:12px;}
+  nav .logo small{display:block;font-family:'Share Tech Mono',monospace;font-weight:400;
+    font-size:9px;color:var(--text-dim);letter-spacing:2px;margin-top:2px;}
+  .navbtn{background:none;border:none;color:var(--text-dim);text-align:left;
+    font-family:'Chakra Petch',sans-serif;font-size:12px;letter-spacing:1.5px;
+    padding:11px 16px;cursor:pointer;border-left:3px solid transparent;
+    text-transform:uppercase;}
+  .navbtn.active{color:var(--amber);border-left:3px solid var(--amber);background:var(--panel);}
+  .navbtn:hover{color:var(--amber);}
+
+  main{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+
+  header{display:flex;justify-content:space-between;align-items:center;
+    padding:14px 20px;border-bottom:2px solid var(--amber-dim);}
+  .screentitle{font-family:'Chakra Petch',sans-serif;font-weight:600;font-size:14px;
+    letter-spacing:2px;text-transform:uppercase;animation:glitchIn .4s steps(2) 1;}
+  .hdr-right{display:flex;align-items:center;gap:18px;font-size:11px;color:var(--text-dim);}
+  .clock{font-family:'Chakra Petch',sans-serif;font-size:19px;color:var(--amber);}
+  .signal{display:flex;gap:2px;align-items:flex-end;height:14px;}
+  .signal span{width:3px;background:var(--amber-dim);}
+  .signal span:nth-child(1){height:30%;}
+  .signal span:nth-child(2){height:55%;}
+  .signal span:nth-child(3){height:75%;}
+  .signal span:nth-child(4){height:100%;}
+  .signal.live span{background:var(--amber);}
+
+  .screens{flex:1;overflow-y:auto;padding:18px;}
+  .screen{display:none;animation:glitchIn .35s steps(3) 1;}
+  .screen.active{display:block;}
+
+  .grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));}
+
+  .panel{background:var(--panel);border:1px solid var(--panel-edge);
+    clip-path:polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 14px 100%, 0 calc(100% - 14px));
+    padding:16px;position:relative;}
+  .panel::before{content:attr(data-tag);position:absolute;top:6px;right:12px;
+    font-size:9px;color:var(--amber-dim);letter-spacing:2px;}
+  .panel h2{font-family:'Chakra Petch',sans-serif;font-size:12px;letter-spacing:2px;
+    color:var(--amber);margin-bottom:12px;text-transform:uppercase;
+    border-left:3px solid var(--amber);padding-left:8px;}
+
+  .battery-shell{display:flex;align-items:center;gap:10px;}
+  .battery-bar-bg{flex:1;height:20px;border:2px solid var(--amber-dim);position:relative;background:var(--void);}
+  .battery-bar-fill{height:100%;background:linear-gradient(90deg,var(--amber-dim),var(--amber));width:0%;transition:width .6s ease;}
+  .battery-pct{font-family:'Chakra Petch',sans-serif;font-size:19px;min-width:50px;text-align:right;}
+  .note{margin-top:8px;font-size:11px;color:var(--text-dim);line-height:1.5;}
+
+  input[type=range]{-webkit-appearance:none;width:100%;height:4px;background:var(--panel-edge);outline:none;}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;
+    background:var(--amber);cursor:pointer;clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%);}
+  .range-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+  .range-row span{font-size:11px;width:76px;color:var(--text-dim);}
+  .range-val{font-size:12px;width:40px;text-align:right;}
+
+  .linkgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+  .linkbtn{display:block;background:var(--void);border:1px solid var(--panel-edge);
+    color:var(--amber);text-decoration:none;padding:10px 8px;font-size:12px;text-align:center;
+    clip-path:polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px));}
+  .linkbtn:hover,.linkbtn:active{background:var(--amber);color:var(--void);}
+
+  textarea{width:100%;height:120px;background:var(--void);border:1px solid var(--panel-edge);
+    color:var(--amber);font-family:'Share Tech Mono',monospace;font-size:12px;padding:8px;
+    resize:none;outline:none;}
+
+  .filebtn{background:var(--void);border:1px dashed var(--amber-dim);color:var(--amber);
+    padding:10px;width:100%;font-family:'Share Tech Mono',monospace;font-size:12px;cursor:pointer;}
+  #filelist{margin-top:10px;max-height:110px;overflow-y:auto;font-size:11px;}
+  #filelist div{padding:3px 0;border-bottom:1px solid var(--panel-edge);color:var(--text-dim);}
+
+  #dimmer{position:fixed;inset:0;background:#000;opacity:0;pointer-events:none;z-index:55;transition:opacity .15s linear;}
+
+  .ticker-wrap{border-top:2px solid var(--amber-dim);padding:8px 0;overflow:hidden;white-space:nowrap;}
+  .ticker{display:inline-block;font-size:10px;color:var(--amber-dim);letter-spacing:1px;
+    padding-left:100%;animation:ticker 22s linear infinite;}
+  @keyframes ticker{0%{transform:translateX(0);}100%{transform:translateX(-100%);}}
+
+  .diag-row{display:flex;justify-content:space-between;font-size:11px;color:var(--text-dim);
+    padding:6px 0;border-bottom:1px solid var(--panel-edge);}
+  .diag-row span:last-child{color:var(--amber);}
+</style>
+</head>
+<body>
+
+<div id="boot">
+  <div class="line" id="l1">MILITECH-COMPATIBLE INTERFACE LOADER v2.077</div>
+  <div class="line" id="l2">CHECKING RELAY LINK...................... OK</div>
+  <div class="line" id="l3">HANDSHAKE WITH HOST DEVICE................ OK</div>
+  <div class="line" id="l4">MOUNTING PERSONAL LINK DASHBOARD</div>
+  <div class="bootbar-bg"><div class="bootbar-fill" id="bootfill"></div></div>
+  <div class="line" id="l5" style="margin-top:14px;">READY <span class="cursor"></span></div>
+</div>
+
+<div id="dimmer"></div>
+
+<div id="app" class="hidden">
+  <div class="crt"></div>
+  <nav>
+    <div class="logo">PERSONAL<br>LINK<small>NIGHT CITY TERMINAL</small></div>
+    <button class="navbtn active" data-screen="status">Status</button>
+    <button class="navbtn" data-screen="display">Display</button>
+    <button class="navbtn" data-screen="audio">Audio</button>
+    <button class="navbtn" data-screen="network">Network</button>
+    <button class="navbtn" data-screen="files">Files</button>
+    <button class="navbtn" data-screen="notes">Notes</button>
+  </nav>
+
+  <main>
+    <header>
+      <div class="screentitle" id="screentitle">Status</div>
+      <div class="hdr-right">
+        <div class="signal live" id="signal"><span></span><span></span><span></span><span></span></div>
+        <div id="dateline">----.--.--</div>
+        <div class="clock" id="clock">00:00:00</div>
+      </div>
+    </header>
+
+    <div class="screens">
+
+      <div class="screen active" id="screen-status">
+        <div class="grid">
+          <div class="panel" data-tag="PWR-01">
+            <h2>Battery Status</h2>
+            <div class="battery-shell">
+              <div class="battery-bar-bg"><div class="battery-bar-fill" id="battFill"></div></div>
+              <div class="battery-pct" id="battPct">--%</div>
+            </div>
+            <div class="note" id="battNote">배터리 API를 조회하는 중...</div>
+          </div>
+          <div class="panel" data-tag="SYS-02">
+            <h2>System Diagnostics</h2>
+            <div class="diag-row"><span>RELAY LINK</span><span>NOMINAL</span></div>
+            <div class="diag-row"><span>CORE TEMP</span><span id="fakeTemp">36.6°C</span></div>
+            <div class="diag-row"><span>UPTIME</span><span id="uptime">00:00:00</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="screen" id="screen-display">
+        <div class="grid">
+          <div class="panel" data-tag="DSP-01">
+            <h2>Brightness</h2>
+            <div class="range-row">
+              <span>LEVEL</span>
+              <input type="range" id="brightness" min="20" max="100" value="100">
+              <div class="range-val" id="brightVal">100%</div>
+            </div>
+            <div class="note">화면 위에 검정 레이어를 씌워 밝기를 낮추는 방식입니다. 실제 백라이트가 아니라 눈에 보이는 밝기만 조절됩니다.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="screen" id="screen-audio">
+        <div class="grid">
+          <div class="panel" data-tag="AUD-01">
+            <h2>Master Volume</h2>
+            <div class="range-row">
+              <span>LEVEL</span>
+              <input type="range" id="volume" min="0" max="100" value="60">
+              <div class="range-val" id="volVal">60%</div>
+            </div>
+            <div class="note">보안 정책상 웹페이지가 기기의 실제 시스템 볼륨은 제어할 수 없습니다. 이 슬라이더는 이 페이지 안에서 재생되는 소리에만 적용됩니다.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="screen" id="screen-network">
+        <div class="grid">
+          <div class="panel" data-tag="NET-01">
+            <h2>Quick Access</h2>
+            <div class="linkgrid">
+              <a class="linkbtn" href="https://www.google.com" target="_blank">SEARCH</a>
+              <a class="linkbtn" href="https://www.youtube.com" target="_blank">STREAM</a>
+              <a class="linkbtn" href="https://mail.google.com" target="_blank">MAIL</a>
+              <a class="linkbtn" href="https://maps.google.com" target="_blank">MAP</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="screen" id="screen-files">
+        <div class="grid">
+          <div class="panel" data-tag="FS-01">
+            <h2>File Explorer</h2>
+            <button class="filebtn" id="fileOpenBtn">폴더 마운트</button>
+            <div id="filelist"></div>
+            <div class="note">데스크톱 Chrome/Edge에서만 지원됩니다. 사용자가 허락한 폴더의 파일 목록만 읽어옵니다.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="screen" id="screen-notes">
+        <div class="grid">
+          <div class="panel" data-tag="MEM-01">
+            <h2>Scratchpad</h2>
+            <textarea placeholder="&gt; 입력..."></textarea>
+            <div class="note">새로고침하면 초기화됩니다 (이 세션에서만 유지).</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="ticker-wrap">
+      <span class="ticker">RELAY LINK STABLE // ALL SYSTEMS NOMINAL // UNAUTHORIZED ACCESS WILL BE LOGGED // PERSONAL LINK OS v2.077 // NIGHT CITY GRID SYNC ACTIVE</span>
+    </div>
+  </main>
+</div>
+
+<script>
+const bootLines = ['l1','l2','l3','l4'];
+let bi = 0;
+function typeBoot(){
+  if(bi >= bootLines.length){
+    document.getElementById('l5').style.opacity = 1;
+    setTimeout(()=>{
+      document.getElementById('boot').classList.add('hidden');
+      document.getElementById('app').classList.remove('hidden');
+      initDashboard();
+    }, 500);
+    return;
+  }
+  document.getElementById(bootLines[bi]).style.opacity = 1;
+  bi++;
+  setTimeout(typeBoot, 260);
+}
+let pct = 0;
+const fillEl = document.getElementById('bootfill');
+const pctTimer = setInterval(()=>{
+  pct += Math.ceil(Math.random()*22);
+  if(pct >= 100){ pct = 100; clearInterval(pctTimer); }
+  fillEl.style.width = pct + '%';
+}, 130);
+window.addEventListener('DOMContentLoaded', ()=> setTimeout(typeBoot, 200));
+
+function initDashboard(){
+  const startTime = Date.now();
+  function tick(){
+    const now = new Date();
+    document.getElementById('clock').textContent = now.toLocaleTimeString('en-GB');
+    document.getElementById('dateline').textContent = now.toISOString().slice(0,10).replace(/-/g,'.');
+    const up = Math.floor((Date.now()-startTime)/1000);
+    const h = String(Math.floor(up/3600)).padStart(2,'0');
+    const m = String(Math.floor((up%3600)/60)).padStart(2,'0');
+    const s = String(up%60).padStart(2,'0');
+    document.getElementById('uptime').textContent = h+':'+m+':'+s;
+  }
+  tick(); setInterval(tick, 1000);
+
+  if('getBattery' in navigator){
+    navigator.getBattery().then(batt=>{
+      function render(){
+        const p = Math.round(batt.level*100);
+        document.getElementById('battFill').style.width = p+'%';
+        document.getElementById('battPct').textContent = p+'%';
+        document.getElementById('battNote').textContent =
+          (batt.charging ? '충전 중 // ' : '방전 중 // ') + '실기기 배터리 API 값';
+      }
+      render();
+      batt.addEventListener('levelchange', render);
+      batt.addEventListener('chargingchange', render);
+    });
+  } else {
+    document.getElementById('battNote').textContent = '이 브라우저는 배터리 API를 지원하지 않습니다 (예: iOS Safari).';
+  }
+
+  const dimmer = document.getElementById('dimmer');
+  document.getElementById('brightness').addEventListener('input', function(){
+    document.getElementById('brightVal').textContent = this.value+'%';
+    dimmer.style.opacity = (100-this.value)/130;
+  });
+  document.getElementById('volume').addEventListener('input', function(){
+    document.getElementById('volVal').textContent = this.value+'%';
+  });
+
+  document.getElementById('fileOpenBtn').addEventListener('click', async ()=>{
+    const list = document.getElementById('filelist');
+    if(!('showDirectoryPicker' in window)){
+      list.innerHTML = '<div>이 브라우저/기기는 폴더 마운트를 지원하지 않습니다.</div>';
+      return;
+    }
+    try{
+      const dirHandle = await window.showDirectoryPicker();
+      list.innerHTML = '';
+      for await (const entry of dirHandle.values()){
+        const row = document.createElement('div');
+        row.textContent = (entry.kind === 'directory' ? '[DIR] ' : '      ') + entry.name;
+        list.appendChild(row);
+      }
+    }catch(e){
+      list.innerHTML = '<div>마운트 취소됨.</div>';
+    }
+  });
+
+  const navButtons = document.querySelectorAll('.navbtn');
+  navButtons.forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      navButtons.forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+      const target = document.getElementById('screen-'+btn.dataset.screen);
+      target.classList.add('active');
+      void target.offsetWidth;
+      target.style.animation = 'none';
+      void target.offsetWidth;
+      target.style.animation = '';
+      document.getElementById('screentitle').textContent = btn.textContent;
+    });
+  });
+}
+</script>
+
+</body>
+</html>
