@@ -161,6 +161,27 @@
   .compiled-header { font-size: 11px; color: var(--text-dim); margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--panel-edge); padding-bottom: 4px; }
   .extract-btn { background: var(--cyan); color: var(--void); border: none; padding: 2px 8px; font-family: 'Chakra Petch'; font-size: 11px; font-weight: bold; cursor: pointer; text-transform: uppercase; transition: 0.2s; }
   .extract-btn:hover { background: #fff; box-shadow: 0 0 8px #fff; }
+
+  /* 케이블 뽑힘 감지 */
+  .pairbtn{background:transparent;border:1px dashed var(--panel-edge);color:var(--text-dim);
+    font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:1px;
+    padding:6px 10px;cursor:pointer;white-space:nowrap;}
+  .pairbtn:hover{border-color:var(--amber-dim);color:var(--amber);}
+  .pairbtn.linked{border-color:var(--cyan);color:var(--cyan);}
+
+  #severed{position:fixed;inset:0;z-index:200;background:#000;color:var(--red);
+    display:none;flex-direction:column;align-items:center;justify-content:center;
+    font-family:'Chakra Petch',sans-serif;text-align:center;}
+  #severed.show{display:flex;}
+  #severed h1{font-size:22px;letter-spacing:5px;text-transform:uppercase;
+    animation:severedGlitch .15s steps(2) infinite;}
+  #severed p{margin-top:10px;font-size:11px;color:#772222;letter-spacing:2px;
+    font-family:'Share Tech Mono',monospace;text-transform:uppercase;}
+  @keyframes severedGlitch{
+    0%{transform:translate(0,0);opacity:1;}
+    50%{transform:translate(-2px,1px);opacity:.7;}
+    100%{transform:translate(2px,-1px);opacity:1;}
+  }
 </style>
 </head>
 <body>
@@ -193,6 +214,7 @@
     <header>
       <div class="screentitle" id="screentitle">Status</div>
       <div class="hdr-right">
+        <button class="pairbtn" id="pairBtn">⛓ LINK DEVICE</button>
         <div class="signal live" id="signal"><span></span><span></span><span></span><span></span></div>
         <div id="dateline">----.--.--</div>
         <div class="clock" id="clock">00:00:00</div>
@@ -304,6 +326,11 @@
   </main>
 </div>
 
+<div id="severed">
+  <h1>LINK SEVERED</h1>
+  <p>connection terminated // closing session</p>
+</div>
+
 <script>
 const bootLines = ['l1','l2','l3','l4'];
 let bi = 0;
@@ -397,6 +424,44 @@ function initDashboard(){
       target.classList.add('active');
     });
   });
+
+  /* ---- 케이블 뽑힘 감지 (Web Serial API) ---- */
+  let linkedPort = null;
+  const pairBtn = document.getElementById('pairBtn');
+
+  function showSevered(){
+    document.getElementById('severed').classList.add('show');
+    setTimeout(()=>{ try{ window.close(); }catch(e){} }, 1000);
+  }
+
+  async function watchForDisconnect(){
+    if(!('serial' in navigator)){
+      pairBtn.textContent = '⛓ 미지원 브라우저';
+      return;
+    }
+    const existing = await navigator.serial.getPorts();
+    if(existing.length){
+      linkedPort = existing[0];
+      pairBtn.textContent = '⛓ LINKED';
+      pairBtn.classList.add('linked');
+    }
+    navigator.serial.addEventListener('disconnect', (e)=>{
+      if(!linkedPort || e.target === linkedPort){
+        showSevered();
+      }
+    });
+  }
+
+  pairBtn.addEventListener('click', async ()=>{
+    if(!('serial' in navigator)) return;
+    try{
+      linkedPort = await navigator.serial.requestPort();
+      pairBtn.textContent = '⛓ LINKED';
+      pairBtn.classList.add('linked');
+    }catch(e){ /* 사용자 취소 */ }
+  });
+
+  watchForDisconnect();
 
   // AI & 파일 생성 컴파일러 모듈 로직
   const apiKeyInput = document.getElementById('api-key-input');
